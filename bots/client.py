@@ -1,7 +1,6 @@
 # encoding: utf-8
 
 import logging
-import random
 
 import telethon
 from telethon import TelegramClient, events
@@ -32,14 +31,19 @@ class Dispatch(object):
             logError()
 
     def joinChannel(self, command):
-        logger.debug('start command joinChannel')
-        groupLink = command.para
+        logger.debug('start command joinChannel {}'.format(command))
+        groupLink = command.para[0]
         try:
             group = self.client.instance.get_entity(groupLink)
             self.client.instance(JoinChannelRequest(group))
             logger.debug('finish command joinChannel')
         except Exception:
             logError()
+
+    def sendMessage(self, command):
+        self.client.instance.send_message(
+            command.para[0],
+            command.para[1].format(name=self.client.account.name))
 
     def updateUsername(self, command):
         while True:
@@ -53,14 +57,10 @@ class Dispatch(object):
                 self.client.account.name = username
                 self.client.account.save()
                 logger.debug('finish updateUsername {}'.format(username))
-                return 
+                return
             except:
                 logError()
             time.sleep(1)
-
-        # username = command.para or self.client.account.name
-        # username = ''.join(username.split(' '))
-        # self.client.instance(UpdateUsernameRequest(username))
 
     def excute(self, command):
         method = getattr(self, command.name, None)
@@ -85,16 +85,30 @@ class Client(object):
         self.dispatch = Dispatch(self)
 
     def OnMessage(self, event):
+        command = Command(event.raw_text)
+        if command.mobile and command.mobile != self.account.mobile:
+            return
         try:
-            command = Command(event.raw_text)
             self.dispatch.excute(command)
         except Exception:
             logError()
 
-    def forever(self, *args):
+    @classmethod
+    def create(cls, account):
+        self = cls(account)
         self.instance.start()
         self.instance.on(events.NewMessage)(self.OnMessage)
+        self.dispatch.joinMyChannel()
         logger.debug('finished me: {}'.format(self.instance.get_me()))
+        return self
+
+    @classmethod
+    def bulkCreate(cls, accounts):
+        clients = [Client.create(account) for account in accounts[:]]
+        logger.debug('初始化完成客户端: {}个'.format(len(accounts)))
+        return clients
+
+    def forever(self):
         try:
             self.instance.idle()
         except KeyboardInterrupt:

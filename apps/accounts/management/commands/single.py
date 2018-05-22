@@ -10,14 +10,14 @@ from bots.client import Client
 logger = logging.getLogger('api')
 
 
-class Command(BaseCommand):
-    help = '''单独测试一个account'''
+# class Command(BaseCommand):
+    # help = '''单独测试一个account'''
 
-    def handle(self, *args, **options):
-        client()
+    # def handle(self, *args, **options):
+        # client()
 
 
 def client():
     account = models.Account.objects.get(mobile='18621540168')
-    Client(account).forever()
-
+    client = Client.create(account)
+    return client

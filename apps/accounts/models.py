@@ -34,8 +34,8 @@ class AirDrop(models.Model):
     name = models.CharField(max_length=50, primary_key=True)
     url = models.CharField(max_length=255)
 
-    class Meta:
-        unique_together = (('name', 'url'), )
+    #  class Meta:
+        #  unique_together = (('name', 'url'), )
 
 
 class Operation(models.Model):
