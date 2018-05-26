@@ -1,0 +1,123 @@
+import os
+
+from django.conf import settings
+from faker import Faker
+
+from .base import BaseDriver
+from apps.accounts import models
+from apps.contrib import const
+
+ServiceMap = {
+    'telegram': {
+        'url': 'https://my.telegram.org/auth'
+    },
+    'eth': {
+        'url': 'https://www.myetherwallet.com/'
+    },
+    'account': {
+        'url': 'https://www.myetherwallet.com/'
+    }
+}
+
+# Url = 'file:///Users/mum5/Downloads/Authorization.htm'
+
+
+def register(func):
+    ServiceMap[func.__name__.lower()]['callback'] = func
+    return func
+
+
+def getLatestFile(path=settings.MEDIA_ROOT):
+    files = os.listdir(path)
+    paths = [os.path.join(path, basename) for basename in files]
+    return max(paths, key=os.path.getctime)
+
+
+@register
+def Account(driver, options):
+    eth = Eth(driver, options)
+    faker = Faker()
+    profile = faker.profile()
+    profile.pop('current_location')
+    name = ''.join(profile['name'].split(' '))
+    email = '{}@mum5.cn'.format(name.lower())
+    models.Account.objects.get_or_create(
+        email=email,
+        mobile=options['mobile'],
+        name=name,
+        profile=profile,
+        **eth)
+
+
+@register
+def Eth(driver, options):
+    ByXpath = driver.driver.find_element_by_xpath
+    # 关闭弹窗
+    ByXpath('//*[@id="onboardingModal"]/div/div/div/div/img').click()
+    ByXpath('/html/body/section[1]/div/main/article[1]/section[1]/div[1]/input'
+            ).send_keys(const.MyPd)
+    # 点击创建钱包
+    driver.driver.implicitly_wait(3)
+    try:
+        driver.driver.find_element_by_link_text('Create New Wallet').click()
+    except:
+        try:
+            driver.driver.find_element_by_link_text('Create New Wallet').click()
+        except:
+            driver.driver.find_element_by_link_text('Create New Wallet').click()
+    ByXpath("//span[contains(text(), 'Keystore File (UTC / JSON)')]").click()
+    driver.driver.implicitly_wait(1)
+    with open(getLatestFile(), 'r') as fd:
+        json = fd.read()
+    ByXpath("//span[contains(text(), 'I understand. Continue')]").click()
+    eth = ByXpath('//textarea').text
+    return dict(eth=eth, json=json)
+
+
+@register
+def Telegram(driver, options):
+    mobile = options['mobile']
+    account = models.Account.objects.get(mobile=mobile)
+    ByXpath = driver.driver.find_element_by_xpath
+    # elem = driver.locate(text='Log Out', method='find_element_by_link_text').click()
+    mobileStr = account.zone + mobile
+    driver.locate(text='+12223334455').send_keys(mobileStr)
+    driver.locate(text="Next", xpath="//button[@type='submit']").click()
+    captcha = input("请输入您收到的验证码\n").strip()
+    driver.driver.find_element_by_id('my_password').send_keys(captcha)
+    #Sign In
+    ByXpath('//*[@id="my_login_form"]/div[4]/button').click()
+    #API development tools
+    driver.driver.implicitly_wait(3)
+    driver.driver.find_element_by_link_text('API development tools').click()
+    if 'Create' in driver.driver.title:  # Create new application
+        ByXpath('//*[@id="app_title"]').send_keys('airdrop')
+        ByXpath('//*[@id="app_shortname"]').send_keys('airdrop')
+        ByXpath('//*[@id="app_url"]').send_keys('telegram.mum5.cn')
+        ByXpath('//*[@id="app_create_form"]/div[4]/div/div[6]/label/input'
+                ).click()
+        ByXpath('//*[@id="app_save_btn"]').click()
+    driver.driver.implicitly_wait(3)
+    #api_id
+    api_id = ByXpath('//*[@id="app_edit_form"]/div[1]/div[1]/span/strong').text
+    api_hash = ByXpath('//*[@id="app_edit_form"]/div[2]/div[1]/span').text
+    models.Apis.objects.get_or_create(
+        account=account, telegram=dict(api_id=api_id, api_hash=api_hash))
+    print('api创建完成')
+
+
+class RegisterDriver(BaseDriver):
+    @classmethod
+    def start(cls, options):
+        service = options['service']
+        callback = ServiceMap[service]['callback']
+        url = ServiceMap[service]['url']
+        driver = cls(url, addCookie=False)
+        ByXpath = driver.driver.find_element_by_xpath
+        try:
+            callback(driver, options)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            import ipdb
+            ipdb.set_trace(context=30)

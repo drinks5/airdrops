@@ -1,7 +1,8 @@
-
 # encoding: utf-8
+import os
 
 MyChannel = 'HKHdqg_lT02XFfUpXVgtrg'
+MyPd = os.environ.get("MyPd") or '1qaz2wsx3edcEth!'
 RecaptchaCookie = {'SID': 'IwYeV0k04fyAgWrWaIDqIXPKb-9VamgLS4GJJPl8pyAzQgcVKzBZEPINDHLpS_UasP_Dww.',
                    'HSID': 'ANfbfgRdQOAETeubh',
                    'SSID': 'Auzpcj3IgnhArjAKQ',

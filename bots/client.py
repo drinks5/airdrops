@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 import logging
+import time
 
 import telethon
 from telethon import TelegramClient, events
@@ -31,11 +32,15 @@ class Dispatch(object):
             logError()
 
     def joinChannel(self, command):
+        if self.client.account.profile.get('joinedMyChannel'):
+            return
         logger.debug('start command joinChannel {}'.format(command))
         groupLink = command.para[0]
         try:
             group = self.client.instance.get_entity(groupLink)
             self.client.instance(JoinChannelRequest(group))
+            self.client.account.profile['joinedMyChannel'] = True
+            self.client.account.save()
             logger.debug('finish command joinChannel')
         except Exception:
             logError()
@@ -46,26 +51,34 @@ class Dispatch(object):
             command.para[1].format(name=self.client.account.name))
 
     def updateUsername(self, command):
+        if self.client.account.profile.get('updatedUsername'):
+            return
+        me = self.client.instance.get_me()
+        origiUsername = me.username
+        if me.username:
+            logger.debug('username为{}，无须更新'.format(origiUsername))
+            return
         while True:
-            import time
             faker = Faker()
             username = faker.name()
             username = ''.join(username.split(' '))
             try:
-                logger.debug('updateUsername {}'.format(username))
+                logger.debug('updateUsername {}\n原始username为:{}\n'.format(username, origiUsername))
                 self.client.instance(UpdateUsernameRequest(username))
                 self.client.account.name = username
+                self.client.account.profile['updatedUsername'] = True
                 self.client.account.save()
-                logger.debug('finish updateUsername {}'.format(username))
+                logger.debug('完成更新usernmae{}'.format(username))
                 return
-            except:
+            except Exception:
                 logError()
-            time.sleep(1)
+            time.sleep(10)
 
     def excute(self, command):
         method = getattr(self, command.name, None)
         if not method:
             return
+        logger.debug('excute {}'.format(command))
         return method(command)
 
 
@@ -94,17 +107,21 @@ class Client(object):
             logError()
 
     @classmethod
-    def create(cls, account):
+    def create(cls, account, index=''):
         self = cls(account)
+        if index:
+            index = '第{}个账号'.format(index)
+        logger.debug('开始登陆:\n{}'.format(self.account, index))
         self.instance.start()
         self.instance.on(events.NewMessage)(self.OnMessage)
         self.dispatch.joinMyChannel()
-        logger.debug('finished me: {}'.format(self.instance.get_me()))
+        logger.debug('登陆完成')
+        time.sleep(1)
         return self
 
     @classmethod
     def bulkCreate(cls, accounts):
-        clients = [Client.create(account) for account in accounts[:]]
+        clients = [Client.create(account, index) for index, account in enumerate(accounts)]
         logger.debug('初始化完成客户端: {}个'.format(len(accounts)))
         return clients
 

@@ -14,7 +14,7 @@ class Command(BaseCommand):
     help = '''开始填写表单'''
 
     def add_arguments(self, parser):
-        parser.add_argument('-index', help='代币名称', default='')
+        parser.add_argument('--mobile', help='手机号', default='')
 
     def handle(self, *args, **options):
         try:
@@ -24,13 +24,10 @@ class Command(BaseCommand):
 
 
 def main(options):
-    accounts = models.Account.objects.exclude(email='')
-    index = options.get('index')
-    if index:
-        account = accounts[int(index)]
-        print(account)
-        Client(account).forever()
-        return
+    accounts = models.Account.objects.all().select_related('apis')
+    mobile = options.get('mobile')
+    if mobile:
+        accounts = models.Account.objects.filter(mobile=mobile)
     clients = Client.bulkCreate(accounts)
     server(clients)
 

@@ -6,12 +6,14 @@ from django.contrib.postgres.fields import JSONField
 
 
 class Account(models.Model):
+    zone = models.CharField(default='+86', max_length=10)
     mobile = models.CharField(max_length=50)
     email = models.CharField(max_length=50)
     name = models.CharField(max_length=50)
     eth = models.CharField(max_length=500)
     json = JSONField()
     profile = JSONField()
+    remark = models.CharField("备注", max_length=255, default='')
 
     class Meta:
         unique_together = (('mobile', 'email', 'name'), )
@@ -33,14 +35,18 @@ class Apis(models.Model):
 class AirDrop(models.Model):
     name = models.CharField(max_length=50, primary_key=True)
     url = models.CharField(max_length=255)
+    created = models.DateTimeField("创建时间", auto_now_add=True)
+    updated = models.DateTimeField("Updated", auto_now=True)
 
     #  class Meta:
-        #  unique_together = (('name', 'url'), )
+    #  unique_together = (('name', 'url'), )
 
 
 class Operation(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     airdrop = models.ForeignKey(AirDrop, on_delete=models.CASCADE)
+    created = models.DateTimeField("创建时间", auto_now_add=True)
+    updated = models.DateTimeField("Updated", auto_now=True)
 
     class Meta:
         unique_together = (('account', 'airdrop'), )

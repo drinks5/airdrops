@@ -5,10 +5,15 @@ import socket
 from django.core.management.base import BaseCommand
 
 class Command(BaseCommand):
-    help = '''执行客户端命令'''
+    help = '''
+    执行客户端命令:
+    sendMessage '{"jjj"}'
+
+    '''
 
     def add_arguments(self, parser):
         parser.add_argument('name', help='命令名称')
+        parser.add_argument('--mobile', help='指定手机')
         parser.add_argument('args', nargs='*')
 
     def handle(self, *args, **options):
