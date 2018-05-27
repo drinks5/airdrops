@@ -54,7 +54,7 @@ class Driver(BaseDriver):
 
     def _startField(self, field: str, texts: dict):
         for text in texts['items']:
-            self.locate(text).send_keys(field)
+            self.locate(text=text).send_keys(field)
         logger.debug('参数{}: 未匹配'.format(texts['items'][0]))
 
     def _start(self, account):

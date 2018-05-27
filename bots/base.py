@@ -14,6 +14,7 @@ class Element(object):
 
     def send_keys(self, value):
         time.sleep(0.2)
+        self.elem and self.elem.clear()
         self.elem and self.elem.send_keys(value)
         return self
 
@@ -69,7 +70,7 @@ class BaseDriver(object):
             })
 
     def locate(self,
-               text: str,
+               text: str='',
                method: str = 'find_element_by_xpath',
                xpath="//input[contains(@placeholder, '{}')]"):
         xpath = xpath.format(text)
@@ -79,5 +80,4 @@ class BaseDriver(object):
             elem = Element(method(xpath))
         except exceptions.NoSuchElementException:
             pass
-        'input' in xpath and elem.clear()
         return elem

@@ -3,7 +3,8 @@ import os
 from django.conf import settings
 from faker import Faker
 
-from .base import BaseDriver
+from bots.base import BaseDriver
+from bots.utils import retry
 from apps.accounts import models
 from apps.contrib import const
 
@@ -13,6 +14,9 @@ ServiceMap = {
     },
     'eth': {
         'url': 'https://www.myetherwallet.com/'
+    },
+    'twitter': {
+        'url': 'https://twitter.com/i/flow/signup'
     },
     'account': {
         'url': 'https://www.myetherwallet.com/'
@@ -58,7 +62,7 @@ def Eth(driver, options):
     # 关闭弹窗
     ByXpath('//*[@id="onboardingModal"]/div/div/div/div/img').click()
     ByXpath('/html/body/section[1]/div/main/article[1]/section[1]/div[1]/input'
-            ).send_keys(const.MyPd)
+            ).send_keys(settings.MY_PD)
     # 点击创建钱包
     driver.driver.implicitly_wait(3)
     try:
@@ -77,6 +81,7 @@ def Eth(driver, options):
     #  ByXpath("//span[contains(text(), 'Save Your Address.')]").click()
     print(eth)
     print(json)
+    input("输入任意键进入下一个账号")
     return dict(eth=eth, json=json)
 
 
@@ -110,6 +115,26 @@ def Telegram(driver, options):
     models.Apis.objects.get_or_create(
         account=account, telegram=dict(api_id=api_id, api_hash=api_hash))
     print('api创建完成')
+
+@register
+def Twitter(driver, options):
+    account = models.Account.objects.get(mobile=mobile)
+    ByXpath = driver.driver.find_element_by_xpath
+    # 改用邮箱
+    ByXpath('//*[@id="react-root"]/div[2]/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div/div/div[4]').click()
+    # 填写名字
+    ByXpath("//input[contains(@placeholder, '{}')]".format('名字')).send_keys(account.name)
+    ByXpath("//input[contains(@placeholder, '{}')]".format('电子邮件')).send_keys(account.email)
+    # 下一个
+    ByXpath('//*[@id="react-root"]/div[2]/div/div/div/div[2]/div[2]/div/div/div[2]/div[1]/div/div/div/div[3]/div/div').click()
+    # 注册
+    ByXpath('//*[@id="react-root"]/div[2]/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div/div/div/div[5]/div').click()
+    # 密码
+    ByXpath('//*[@id="react-root"]/div/main/div/div/div/div[2]/div[2]/div/div[3]/div/div[2]/div/input').send_keys(settings.TT_PD)
+
+    # 谷歌验证码
+    driver.locate(xpath="//input[@type='submit']").click()
+    return driver
 
 
 class RegisterDriver(BaseDriver):

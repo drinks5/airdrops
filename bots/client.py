@@ -9,9 +9,8 @@ from telethon import TelegramClient, events
 from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.functions.messages import ImportChatInviteRequest
 from telethon.tl.functions.account import UpdateUsernameRequest
-from telethon.tl.functions.messages import SendMessageRequest
 from faker import Faker
-from django.core.cache import cache
+from django.conf import settings
 
 from apps.contrib import const
 from .utils import logError, Command, sleep
@@ -29,7 +28,7 @@ class Dispatch(object):
         if self.client.account.profile.get('joinedMyChannel'):
             return
         try:
-            self.client.instance(ImportChatInviteRequest(const.MyChannel))
+            self.client.instance(ImportChatInviteRequest(settings.MY_CHANNEL))
             self.client.account.profile['joinedMyChannel'] = True
         except telethon.errors.rpc_error_list.UserAlreadyParticipantError:
             self.client.account.profile['joinedMyChannel'] = True

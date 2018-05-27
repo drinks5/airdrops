@@ -11,7 +11,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('service', help='服务，telegram或eth')
-        parser.add_argument('mobile', help='手机号')
+        parser.add_argument('--mobile', help='手机号')
 
     def handle(self, *args, **options):
         try:

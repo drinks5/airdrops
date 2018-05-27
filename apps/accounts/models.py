@@ -35,7 +35,7 @@ class Apis(models.Model):
 
 class AirDrop(models.Model):
     name = models.CharField(max_length=50, primary_key=True)
-    url = models.CharField(max_length=255)
+    url = models.CharField(max_length=512)
     created = models.DateTimeField("创建时间", auto_now_add=True)
     updated = models.DateTimeField("Updated", auto_now=True)
 

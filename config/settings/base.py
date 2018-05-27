@@ -13,6 +13,9 @@ READ_DOT_ENV_FILE = env.bool('DJANGO_READ_DOT_ENV_FILE', default=False)
     # OS environment variables take precedence over variables from .env
 env.read_env(str(ROOT_DIR.path('.env')))
 
+MY_PD = env("MY_PD")
+TT_PD = env("TT_PD", default=MY_PD)
+MY_CHANNEL = env("MY_CHANNEL")
 # GENERAL
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#debug
@@ -41,7 +44,6 @@ DATABASES = {
     'default': env.db('DATABASE_URL', default='postgres://postgres:123456@0.0.0.0:5432/bc'),
 }
 DATABASES['default']['ATOMIC_REQUESTS'] = True
-print(DATABASES)
 
 # URLS
 # ------------------------------------------------------------------------------
