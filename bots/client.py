@@ -2,14 +2,16 @@
 
 import logging
 import time
+import datetime
 
 import telethon
 from telethon import TelegramClient, events
-import socks
 from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.functions.messages import ImportChatInviteRequest
 from telethon.tl.functions.account import UpdateUsernameRequest
+from telethon.tl.functions.messages import SendMessageRequest
 from faker import Faker
+from django.core.cache import cache
 
 from apps.contrib import const
 from .utils import logError, Command, sleep
@@ -24,28 +26,32 @@ class Dispatch(object):
         self.client = client
 
     def joinMyChannel(self):
+        if self.client.account.profile.get('joinedMyChannel'):
+            return
         try:
             self.client.instance(ImportChatInviteRequest(const.MyChannel))
+            self.client.account.profile['joinedMyChannel'] = True
         except telethon.errors.rpc_error_list.UserAlreadyParticipantError:
+            self.client.account.profile['joinedMyChannel'] = True
             pass
         except Exception:
             logError()
+        self.client.account.save()
 
     def joinChannel(self, command):
-        if self.client.account.profile.get('joinedMyChannel'):
-            return
+        time.sleep(10)
         logger.debug('start command joinChannel {}'.format(command))
         groupLink = command.para[0]
         try:
             group = self.client.instance.get_entity(groupLink)
             self.client.instance(JoinChannelRequest(group))
-            self.client.account.profile['joinedMyChannel'] = True
             self.client.account.save()
             logger.debug('finish command joinChannel')
         except Exception:
             logError()
 
     def sendMessage(self, command):
+        time.sleep(1)
         self.client.instance.send_message(
             command.para[0],
             command.para[1].format(name=self.client.account.name))
@@ -63,7 +69,8 @@ class Dispatch(object):
             username = faker.name()
             username = ''.join(username.split(' '))
             try:
-                logger.debug('updateUsername {}\n原始username为:{}\n'.format(username, origiUsername))
+                logger.debug('updateUsername {}\n原始username为:{}\n'.format(
+                    username, origiUsername))
                 self.client.instance(UpdateUsernameRequest(username))
                 self.client.account.name = username
                 self.client.account.profile['updatedUsername'] = True
@@ -81,6 +88,15 @@ class Dispatch(object):
         logger.debug('excute {}'.format(command))
         return method(command)
 
+    def getMessages(self, command):
+        """
+        getMessages https://t.me/FanfareAirdropBot
+        """
+        now = datetime.datetime.now()
+        entity = command.para[0]
+        messages = sorted(self.client.instance.get_messages(entity, offset_date=now, limit=5), key=lambda x: x.id)
+        return '\n-----\n'.join(['{}: {}'.format(x.date, x.message) for x in messages])
+
 
 class Client(object):
     def __init__(self, account):
@@ -92,19 +108,22 @@ class Client(object):
             self.account.name,
             api_id,
             api_hash,
-            proxy=(socks.SOCKS5, '127.0.0.1', 1080),
+            proxy=const.Proxy,
             update_workers=4,
-            spawn_read_thread=False)
+            spawn_read_thread=True)
         self.dispatch = Dispatch(self)
 
     def OnMessage(self, event):
         command = Command(event.raw_text)
-        if command.mobile and command.mobile != self.account.mobile:
+        if command.mobile and command.mobile != self.account.mobile:  # 如果命令中指定手机号，则在指定手机号中执行命令
             return
+        if str(event.chat.phone) == const.TelegramPhone:
+            logger.debug('{}: {}'.format(self.account.mobile, event.raw_text))
         try:
-            self.dispatch.excute(command)
+            return self.dispatch.excute(command)
         except Exception:
             logError()
+        return ''
 
     @classmethod
     def create(cls, account, index=''):
@@ -113,15 +132,17 @@ class Client(object):
             index = '第{}个账号'.format(index)
         logger.debug('开始登陆:\n{}'.format(self.account, index))
         self.instance.start()
-        self.instance.on(events.NewMessage)(self.OnMessage)
         self.dispatch.joinMyChannel()
+        self.instance.on(events.NewMessage)(self.OnMessage)
         logger.debug('登陆完成')
-        time.sleep(1)
         return self
 
     @classmethod
     def bulkCreate(cls, accounts):
-        clients = [Client.create(account, index) for index, account in enumerate(accounts)]
+        clients = []
+        for index, account in enumerate(accounts):
+            clients.append(cls.create(account, index))
+            time.sleep(0.2)
         logger.debug('初始化完成客户端: {}个'.format(len(accounts)))
         return clients
 

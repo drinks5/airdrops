@@ -6,7 +6,9 @@ import threading
 from django.core.management.base import BaseCommand
 
 from apps.accounts import models
+from apps.contrib import const
 from bots.client import Client
+from bots.utils import Event
 logger = logging.getLogger('api')
 
 
@@ -32,32 +34,34 @@ def main(options):
     server(clients)
 
 
-class Event(object):
-    def __init__(self, bytes):
-        self.raw_text = bytes.decode('utf8')
-
-
 def handle_client_connection(client_socket, clients):
     request = client_socket.recv(1024)
     event = Event(request)
+    if event.json.get('mobile'):
+        clients = [x for x in clients if x.account.mobile == event.json['mobile']]
     for client in clients:
-        client.OnMessage(event)
-        time.sleep(30)
+        logger.debug('{}发送命令:{}'.format(client.account.mobile, event))
+        response = client.OnMessage(event) or 'ok'
+        client_socket.send(response.encode('utf8'))
     client_socket.close()
+    logger.debug('全部客户端命令发送完成')
 
 
 def server(clients):
-    bind_ip = '0.0.0.0'
-    bind_port = 9999
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind((bind_ip, bind_port))
+    server.bind(const.Tcp)
     server.listen(5)  # max backlog of connections
+    try:
+        mainLoop(clients, server)
+    finally:
+        server.close()
+
+
+def mainLoop(clients, server):
     while True:
+        time.sleep(1)
+        [client.instance.get_dialogs() for client in clients]
         client_sock, address = server.accept()
         client_handler = threading.Thread(
-            target=handle_client_connection,
-            args=(
-                client_sock, clients
-            )  # without comma you'd get a... TypeError: handle_client_connection() argument after * must be a sequence, not _socketobject
-        )
+            target=handle_client_connection, args=(client_sock, clients))
         client_handler.start()

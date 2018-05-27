@@ -3,12 +3,48 @@ from traceback import format_exc
 import random
 import time
 import json
+import socket
+
+from apps.contrib import const
 
 logger = logging.getLogger('api')
 
 
 def logError():
     logger.error(format_exc())
+
+
+class TcpClient(object):
+    client = None
+
+    def __enter__(self):
+        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client.setblocking(True)
+        self.client.connect(const.Tcp)
+        return self.client
+
+    def __exit__(self, *args):
+        self.client.close()
+
+
+class Chat:
+    username = ''
+    phone = ''
+
+
+class Event(object):
+    def __init__(self, bytes):
+        self.raw_text = bytes.decode('utf8')
+        self.chat = Chat()
+        try:
+            self.json = json.loads(self.raw_text)
+        except (TypeError, ValueError):
+            self.json = {}
+
+    def __str__(self):
+        return self.raw_text
+
+    __repr__ = __str__
 
 
 def retry(func):

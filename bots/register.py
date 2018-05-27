@@ -51,6 +51,9 @@ def Account(driver, options):
 
 @register
 def Eth(driver, options):
+    """
+    python manage.py register eth
+    """
     ByXpath = driver.driver.find_element_by_xpath
     # 关闭弹窗
     ByXpath('//*[@id="onboardingModal"]/div/div/div/div/img').click()
@@ -69,8 +72,11 @@ def Eth(driver, options):
     driver.driver.implicitly_wait(1)
     with open(getLatestFile(), 'r') as fd:
         json = fd.read()
-    ByXpath("//span[contains(text(), 'I understand. Continue')]").click()
-    eth = ByXpath('//textarea').text
+        eth = '0x' + fd.name.split('--')[-1].split('.')[0]
+    #  ByXpath("//span[contains(text(), 'I understand. Continue')]").click()
+    #  ByXpath("//span[contains(text(), 'Save Your Address.')]").click()
+    print(eth)
+    print(json)
     return dict(eth=eth, json=json)
 
 

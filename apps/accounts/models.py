@@ -17,6 +17,7 @@ class Account(models.Model):
 
     class Meta:
         unique_together = (('mobile', 'email', 'name'), )
+        ordering = ["id"]
 
     def __str__(self):
         fields = [x.name for x in self._meta.fields]
