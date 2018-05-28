@@ -40,9 +40,8 @@ class Dispatch(object):
     def joinChannel(self, command):
         time.sleep(10)
         logger.debug('start command joinChannel {}'.format(command))
-        groupLink = command.para[0]
         try:
-            group = self.client.instance.get_entity(groupLink)
+            group = self.client.instance.get_entity(command.target)
             self.client.instance(JoinChannelRequest(group))
             self.client.account.save()
             logger.debug('finish command joinChannel')
@@ -51,9 +50,12 @@ class Dispatch(object):
 
     def sendMessage(self, command):
         time.sleep(1)
-        self.client.instance.send_message(
-            command.para[0],
-            command.para[1].format(name=self.client.account.name))
+        account = self.client.account
+        self.client.instance.send_message(command.target,
+                                          command.msg.format(
+                                              eth=account.eth,
+                                              email=account.email,
+                                              name=account.name))
 
     def updateUsername(self, command):
         if self.client.account.profile.get('updatedUsername'):
@@ -84,7 +86,6 @@ class Dispatch(object):
         method = getattr(self, command.name, None)
         if not method:
             return
-        logger.debug('excute {}'.format(command))
         return method(command)
 
     def getMessages(self, command):
@@ -92,9 +93,13 @@ class Dispatch(object):
         getMessages https://t.me/FanfareAirdropBot
         """
         now = datetime.datetime.now()
-        entity = command.para[0]
-        messages = sorted(self.client.instance.get_messages(entity, offset_date=now, limit=5), key=lambda x: x.id)
-        return '\n-----\n'.join(['{}: {}'.format(x.date, x.message) for x in messages])
+        entity = command.target
+        messages = sorted(
+            self.client.instance.get_messages(
+                entity, offset_date=now, limit=5),
+            key=lambda x: x.id)
+        return '\n-----\n'.join(
+            ['{}: {}'.format(x.date, x.message) for x in messages])
 
 
 class Client(object):

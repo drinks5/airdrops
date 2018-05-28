@@ -13,7 +13,7 @@ import logging
 logger = logging.getLogger('api')
 textsByField = {
     'email': {
-        'items': ['mail', '邮箱']
+        'items': ['mail', '邮箱', 'Email']
     },
     'mobile': {
         'items': ['Mobile', 'mobile', '手机']
@@ -51,11 +51,9 @@ textsByField = {
 
 
 class Driver(BaseDriver):
-
     def _startField(self, field: str, texts: dict):
         for text in texts['items']:
             self.locate(text=text).send_keys(field)
-        logger.debug('参数{}: 未匹配'.format(texts['items'][0]))
 
     def _start(self, account):
         for fieldStr, texts in textsByField.items():
@@ -73,26 +71,31 @@ class Driver(BaseDriver):
                     logError()
 
     @classmethod
-    def start(cls, name: str = '', url: str = ''):
-        if name:
-            airdrop = AirDrop.objects.filter(name=name.lower())
-            if airdrop:
-                airdrop = airdrop[0]
-            else:
-                airdrop = AirDrop.objects.create(name=name.lower(), url=url)
+    def start(cls, options):
+        name = options['name'].lower()
+        url = options['url']
+        finished = ''
+        airdrop = AirDrop.objects.filter(name=name)
+        if airdrop:
+            airdrop = airdrop[0]
+        else:
+            airdrop = AirDrop.objects.create(name=name, url=url)
         #  url = 'file:///Users/mum5/Downloads/RusGas.htm'
-        for index, account in enumerate(Account.objects.exclude(email='')):
+        accounts = Account.objects.exclude(email='')
+        if options['mobile']:
+            accounts = accounts.filter(mobile=options['mobile'])
+        for index, account in enumerate(accounts):
             logger.debug('开始第{}账号:\n{}'.format(index, account))
             driver = cls(url)
             try:
                 driver._start(account)
-                finished = input()
+                finished = input("输入n则不记录操作\n输入任意键继续")
             finally:
                 try:
                     driver.driver.close()
                 except:
                     pass
-            if finished is not None and name:
+            if finished == 'n':
                 operation, ok = Operation.objects.get_or_create(
                     airdrop=airdrop, account=account)
                 if not ok:

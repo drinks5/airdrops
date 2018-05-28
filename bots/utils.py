@@ -73,10 +73,12 @@ class Command(object):
         self.raw_text = text
         self.name = data.pop('name', '')
         self.para = data.pop('para', [])
+        self.target = data.get('target', '')
         self.mobile = data.pop('mobile', '')
+        self.msg = self.para and self.para[0] or ''
 
     def __str__(self):
-        return '<Command: {}, {}>'.format(self.name, self.para)
+        return '<Command {}: {}, {}>'.format(self.name, self.target, self.para)
 
     __repr__ = __str__
 

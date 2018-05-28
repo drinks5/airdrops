@@ -17,13 +17,10 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('name', help='代币名称')
         parser.add_argument('url', help='url')
+        parser.add_argument('--mobile', help='指定手机号')
 
     def handle(self, *args, **options):
         try:
-            driver(options)
+            Driver.start(options)
         except KeyboardInterrupt:
             pass
-
-
-def driver(options):
-    Driver.start(options['name'], options['url'])

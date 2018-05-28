@@ -39,13 +39,21 @@ def getLatestFile(path=settings.MEDIA_ROOT):
 
 @register
 def Account(driver, options):
-    eth = Eth(driver, options)
     faker = Faker()
     profile = faker.profile()
     profile.pop('current_location')
-    name = ''.join(profile['name'].split(' '))
+    splitName = profile['name'].split(' ')
+    name = ''.join(splitName)
     email = '{}@mum5.cn'.format(name.lower())
-    models.Account.objects.get_or_create(
+    profile['FirstName'], profile['LastName'] = splitName
+    if options['update']:
+        account = models.Account.objects.get(mobile=options['mobile'])
+        account.name = name
+        account.profile = profile
+        account.email = email
+        return account.save()
+    eth = Eth(driver, options)
+    models.Account.objects.update_or_create(
         email=email,
         mobile=options['mobile'],
         name=name,
@@ -60,6 +68,7 @@ def Eth(driver, options):
     """
     ByXpath = driver.driver.find_element_by_xpath
     # 关闭弹窗
+    driver.driver.implicitly_wait(3)
     ByXpath('//*[@id="onboardingModal"]/div/div/div/div/img').click()
     ByXpath('/html/body/section[1]/div/main/article[1]/section[1]/div[1]/input'
             ).send_keys(settings.MY_PD)
@@ -69,11 +78,13 @@ def Eth(driver, options):
         driver.driver.find_element_by_link_text('Create New Wallet').click()
     except:
         try:
-            driver.driver.find_element_by_link_text('Create New Wallet').click()
+            driver.driver.find_element_by_link_text(
+                'Create New Wallet').click()
         except:
-            driver.driver.find_element_by_link_text('Create New Wallet').click()
+            driver.driver.find_element_by_link_text(
+                'Create New Wallet').click()
     ByXpath("//span[contains(text(), 'Keystore File (UTC / JSON)')]").click()
-    driver.driver.implicitly_wait(1)
+    driver.driver.implicitly_wait(3)
     with open(getLatestFile(), 'r') as fd:
         json = fd.read()
         eth = '0x' + fd.name.split('--')[-1].split('.')[0]
@@ -116,21 +127,32 @@ def Telegram(driver, options):
         account=account, telegram=dict(api_id=api_id, api_hash=api_hash))
     print('api创建完成')
 
+
 @register
 def Twitter(driver, options):
     account = models.Account.objects.get(mobile=mobile)
     ByXpath = driver.driver.find_element_by_xpath
     # 改用邮箱
-    ByXpath('//*[@id="react-root"]/div[2]/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div/div/div[4]').click()
+    ByXpath(
+        '//*[@id="react-root"]/div[2]/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div/div/div[4]'
+    ).click()
     # 填写名字
-    ByXpath("//input[contains(@placeholder, '{}')]".format('名字')).send_keys(account.name)
-    ByXpath("//input[contains(@placeholder, '{}')]".format('电子邮件')).send_keys(account.email)
+    ByXpath("//input[contains(@placeholder, '{}')]".format('名字')).send_keys(
+        account.name)
+    ByXpath("//input[contains(@placeholder, '{}')]".format('电子邮件')).send_keys(
+        account.email)
     # 下一个
-    ByXpath('//*[@id="react-root"]/div[2]/div/div/div/div[2]/div[2]/div/div/div[2]/div[1]/div/div/div/div[3]/div/div').click()
+    ByXpath(
+        '//*[@id="react-root"]/div[2]/div/div/div/div[2]/div[2]/div/div/div[2]/div[1]/div/div/div/div[3]/div/div'
+    ).click()
     # 注册
-    ByXpath('//*[@id="react-root"]/div[2]/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div/div/div/div[5]/div').click()
+    ByXpath(
+        '//*[@id="react-root"]/div[2]/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div/div/div/div[5]/div'
+    ).click()
     # 密码
-    ByXpath('//*[@id="react-root"]/div/main/div/div/div/div[2]/div[2]/div/div[3]/div/div[2]/div/input').send_keys(settings.TT_PD)
+    ByXpath(
+        '//*[@id="react-root"]/div/main/div/div/div/div[2]/div[2]/div/div[3]/div/div[2]/div/input'
+    ).send_keys(settings.TT_PD)
 
     # 谷歌验证码
     driver.locate(xpath="//input[@type='submit']").click()

@@ -20,19 +20,29 @@ class Command(BaseCommand):
     '''
 
     def add_arguments(self, parser):
+        """
+        python manage.py excute joinChannel xxxxx --record={name} --iter=1 --mobile=xxxxx
+        """
         parser.add_argument('name', help='命令名称')
         parser.add_argument('args', nargs='*')
-        parser.add_argument('--mobile', help='指定手机')
-        parser.add_argument('--iter', type=bool)
+        parser.add_argument('--mobile', help='指定手机,测试单独某个手机号时打开')
+        parser.add_argument('--iter', action='store_true', help="是否逐个发送消息，当遇到需要发送验证码的机器人时打开这个开关")
+        parser.add_argument('--record', help="是否需要在Airdrop表插入数据")
 
     def handle(self, *args, **options):
         name = options['name']
-        para = args
+        para = list(args)
+        target = ''
+        if para:
+            target = para.pop(0)
+        if options['record']:
+            models.AirDrop.objects.get_or_create(
+                name=options['record'], url=para[0])
         if options['iter']:
-            parseIter(name, para, options)
+            parseIter(name, target, para, options)
             return
         with TcpClient() as client:
-            command = getCommand(name=name, para=para)
+            command = getCommand(name=name, para=para, target=target)
             client.send(command)
 
 
@@ -40,7 +50,7 @@ def getCommand(**para):
     return json.dumps(para).encode('utf8')
 
 
-def parseIter(name, para, options):
+def parseIter(name, target, para, options):
     """
     python manage.py excute iter sendMessage xxxx xxxx
     """
@@ -50,17 +60,24 @@ def parseIter(name, para, options):
     for account in accounts:
         with TcpClient() as client:
             command = getCommand(
-                name='getMessages', para=para, mobile=account.mobile)
+                name='getMessages',
+                target=target,
+                para=para,
+                mobile=account.mobile)
             client.send(command)
             texts = client.recv(const.MaxBuffer).decode('utf8')
-            print('--------\n')
-            print('最近消息:\n{}\n\n'.format(texts, account.mobile))
-        reply = input("请输入回复，直接回车则跳过回复\n").format(
-            eth=account.eth, email=account.email, name=account.name)
+        print('--------\n')
+        print('最近消息:\n{}\n\n{}'.format(texts, account.mobile))
+        reply = input("请输入回复，直接回车则跳过回复\n")
         _para = list(para)
         _para.append(reply)
-        command = getCommand(name=name, para=_para, mobile=account.mobile)
+        _para = [
+            x.format(eth=account.eth, email=account.email, name=account.name)
+            for x in _para
+        ]
+        command = getCommand(
+            name=name, para=_para, mobile=account.mobile, target=target)
         if reply:
             with TcpClient() as client:
                 client.send(command)
-            print('发送命令{}\n'.format(command))
+                print('发送命令{}\n'.format(command))

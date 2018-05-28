@@ -23,6 +23,12 @@ class Account(models.Model):
         fields = [x.name for x in self._meta.fields]
         return '\n'.join(
             ['{}: {}'.format(key, getattr(self, key)) for key in fields])
+    @property
+    def LastName(self):
+        return self.profile['LastName']
+    @property
+    def FirstName(self):
+        return self.profile['FirstName']
 
 
 class Apis(models.Model):

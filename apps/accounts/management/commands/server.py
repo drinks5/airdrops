@@ -38,11 +38,19 @@ def handle_client_connection(client_socket, clients):
     request = client_socket.recv(1024)
     event = Event(request)
     if event.json.get('mobile'):
-        clients = [x for x in clients if x.account.mobile == event.json['mobile']]
+        clients = [
+            x for x in clients if x.account.mobile == event.json['mobile']
+        ]
     for client in clients:
+        client.instance.get_dialogs()
         logger.debug('{}发送命令:{}'.format(client.account.mobile, event))
         response = client.OnMessage(event) or 'ok'
-        client_socket.send(response.encode('utf8'))
+        try:
+            client_socket.send(response.encode('utf8'))
+        except BrokenPipeError:
+            # 客户端连接已经关闭
+            if response != 'ok':
+                logger.debug('发送失败:{}'.format(response.encode('utf8')))
     client_socket.close()
     logger.debug('全部客户端命令发送完成')
 
@@ -59,8 +67,7 @@ def server(clients):
 
 def mainLoop(clients, server):
     while True:
-        time.sleep(1)
-        [client.instance.get_dialogs() for client in clients]
+        time.sleep(0.5)
         client_sock, address = server.accept()
         client_handler = threading.Thread(
             target=handle_client_connection, args=(client_sock, clients))
