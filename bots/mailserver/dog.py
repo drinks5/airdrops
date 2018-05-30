@@ -26,12 +26,13 @@ class FileEventHandler(FileSystemEventHandler):
         FileSystemEventHandler.__init__(self)
 
     def on_created(self, event):
+        src_path = event.src_path
         if not event.is_directory:
             print("file created:{0}".format(event.src_path))
             try:
                 with open(event.src_path, 'r') as fd:
                     hrefs = getHrefs(fd.read())
-            except FileNotFoundError:
+            except (FileNotFoundError, UnicodeDecodeError):
                 return
             for text, href in hrefs:
                 try:
@@ -42,7 +43,7 @@ class FileEventHandler(FileSystemEventHandler):
 
 
 def watchDog():
-    path = str(settings.ROOT_DIR.path('maildata'))
+    path = str((settings.ROOT_DIR - 1).path('docker-mailserver').path('maildata'))
     print('开始监听目录:{}'.format(path))
     observer = Observer()
     event_handler = FileEventHandler()
