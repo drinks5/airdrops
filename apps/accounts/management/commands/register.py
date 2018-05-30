@@ -13,6 +13,7 @@ class Command(BaseCommand):
         parser.add_argument('service', help='服务，telegram或eth')
         parser.add_argument('--mobile', help='手机号')
         parser.add_argument('--update', help='是否更新', action="store_true")
+        parser.add_argument('--zone', help='zone字段,如--zone=+1', default='+86')
 
     def handle(self, *args, **options):
         try:

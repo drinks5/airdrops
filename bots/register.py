@@ -58,6 +58,7 @@ def Account(driver, options):
         mobile=options['mobile'],
         name=name,
         profile=profile,
+        zone=options['zone'],
         **eth)
 
 
@@ -74,16 +75,10 @@ def Eth(driver, options):
             ).send_keys(settings.MY_PD)
     # 点击创建钱包
     driver.driver.implicitly_wait(3)
-    try:
-        driver.driver.find_element_by_link_text('Create New Wallet').click()
-    except:
-        try:
-            driver.driver.find_element_by_link_text(
-                'Create New Wallet').click()
-        except:
-            driver.driver.find_element_by_link_text(
-                'Create New Wallet').click()
-    ByXpath("//span[contains(text(), 'Keystore File (UTC / JSON)')]").click()
+    walletElem = driver.driver.find_element_by_link_text('Create New Wallet')
+    retry(walletElem.click)()
+    downloadElem = ByXpath("//span[contains(text(), 'Keystore File (UTC / JSON)')]")
+    retry(downloadElem.click)()
     driver.driver.implicitly_wait(3)
     with open(getLatestFile(), 'r') as fd:
         json = fd.read()

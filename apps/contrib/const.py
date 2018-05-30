@@ -5,7 +5,7 @@ import os
 Proxy = (socks.SOCKS5, '127.0.0.1', 1080)
 InjectedChats = 'InjectedChats'  # 需要被拦截的会话
 Telegram = 'Telegram'
-TelegramPhone = '42277'
+TelegramPhone = '42777'
 Tcp = ('0.0.0.0', 9999)
 MaxBuffer = 1024 * 512
 

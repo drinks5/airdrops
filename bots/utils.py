@@ -52,10 +52,12 @@ def retry(func):
 
     def inner(*args):
         while True:
+            nonlocal count
             try:
                 return func(*args)
             except Exception:
                 count += 1
+            print(count)
             if count == 3:
                 logError()
                 break

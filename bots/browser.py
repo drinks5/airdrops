@@ -1,5 +1,8 @@
 import urllib
 import time
+from itertools import zip_longest
+import threading
+
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
@@ -11,9 +14,14 @@ from .utils import logError
 
 import logging
 logger = logging.getLogger('api')
+NAMES = [
+    'facebook_username', 'name', 'Name', 'Username', 'username',
+    'telegram_username', 'Twitter', 'Telegram', 'twitter_username',
+    'twitter'
+]
 textsByField = {
     'email': {
-        'items': ['mail', '邮箱', 'Email']
+        'items': ['mail', '邮箱', 'Email', 'email']
     },
     'mobile': {
         'items': ['Mobile', 'mobile', '手机']
@@ -31,13 +39,19 @@ textsByField = {
         'items': ['First ']
     },
     'eth': {
-        'items': ['Eth', 'Wallet', 'Ethereum', '钱包']
+        'items': ['Eth', 'Wallet', 'Ethereum', '钱包', 'eth_address']
+    },
+    'name': {
+        'items': NAMES
+    },
+    'facebook': {
+        'items': NAMES
     },
     'telegram': {
-        'items': ['Telegram', 'Username']
+        'items': NAMES
     },
     'twitter': {
-        'items': ['Twitter']
+        'items': NAMES
     },
     # 'accept': {
     # 'items': ['Accept'],
@@ -50,10 +64,24 @@ textsByField = {
 }
 
 
+def send_keys(elem, field):
+    pass
+
+
 class Driver(BaseDriver):
     def _startField(self, field: str, texts: dict):
         for text in texts['items']:
-            self.locate(text=text).send_keys(field)
+            if self.locate(
+                    text=text,
+                    xpath="//input[contains(@placeholder, '{}')]").send_keys(
+                        field):
+                return
+            if self.locate(
+                    text=text, xpath="//input[@type='{}']").send_keys(field):
+                return
+            if self.locate(
+                    text=text, xpath="//input[@name='{}']").send_keys(field):
+                return
 
     def _start(self, account):
         for fieldStr, texts in textsByField.items():
@@ -84,20 +112,22 @@ class Driver(BaseDriver):
         accounts = Account.objects.exclude(email='')
         if options['mobile']:
             accounts = accounts.filter(mobile=options['mobile'])
-        for index, account in enumerate(accounts):
-            logger.debug('开始第{}账号:\n{}'.format(index, account))
-            driver = cls(url)
-            try:
-                driver._start(account)
-                finished = input("输入n则不记录操作\n输入任意键继续")
-            finally:
-                try:
-                    driver.driver.close()
-                except:
-                    pass
-            if finished == 'n':
-                operation, ok = Operation.objects.get_or_create(
-                    airdrop=airdrop, account=account)
-                if not ok:
-                    logger.debug('该账号已经操作过此空投')
+        for account in accounts[:4]:
+            _startOne(cls, url, account)
+            #  threading.Thread(
+                #  target=_startOne, args=(cls, url, account)).start()
+            operation, ok = Operation.objects.get_or_create(
+                airdrop=airdrop, account=account)
+            if not ok:
+                logger.debug('该账号已经操作过此空投')
         logger.debug('完成全部账号')
+
+
+def _startOne(cls, url, account):
+    driver = cls(url)
+    logger.debug('开始账号:\n{}'.format(account))
+    try:
+        driver._start(account)
+    except Exception:
+        pass
+    time.sleep(2 * 60)
