@@ -7,6 +7,7 @@ __pycache__/
 *.session
 json
 proxy.zip
+*.out
 
 # C extensions
 *.so

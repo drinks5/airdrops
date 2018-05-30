@@ -16,6 +16,8 @@ env.read_env(str(ROOT_DIR.path('.env')))
 MY_PD = env("MyPd")
 TT_PD = env("TtPd", default=MY_PD)
 MY_CHANNEL = env("MyChannel")
+CHROME_DRIVER = env("CHROME_DRIVER", default='/usr/local/bin/chromedriver')
+MAIL_SERVER = env("MAIL_SERVER", default='')  # 自建的邮件服务器
 # GENERAL
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#debug

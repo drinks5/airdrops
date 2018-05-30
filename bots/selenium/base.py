@@ -10,7 +10,7 @@ from bots.selenium.proxy import create_proxyauth_extension
 from bots.utils import logError
 logger = logging.getLogger('api')
 proxyConfig = settings.PROXY_SERVER
-chromedriver = '/Users/mum5/Documents/repo/chromedriver'
+chromedriver = settings.CHROME_DRIVER
 geckodriver = '/usr/local/bin/geckodriver'
 
 

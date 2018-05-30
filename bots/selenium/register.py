@@ -1,5 +1,6 @@
 import os
 
+import requests
 from django.conf import settings
 from faker import Faker
 
@@ -60,6 +61,8 @@ def Account(driver, options):
         profile=profile,
         zone=options['zone'],
         **eth)
+    if settings.MAIL_SERVER:
+        requests.get('http://{}/register/{}'.format(settings.MAIL_SERVER, account.email))
 
 
 @register

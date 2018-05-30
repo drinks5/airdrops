@@ -64,6 +64,12 @@ Deployment
 
 The following details how to deploy this application.
 
+    $ brew install pipenv
+    $ pipenv shell
+    $ pip install -r requirements/local.txt
+    $ python manage.py runserver
+
+
 
 
 
