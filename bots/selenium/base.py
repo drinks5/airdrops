@@ -6,6 +6,7 @@ from selenium import webdriver
 from selenium.common import exceptions
 
 from apps.contrib import const
+from bots.selenium.proxy import create_proxyauth_extension
 from .utils import logError
 logger = logging.getLogger('api')
 proxyConfig = settings.PROXY_SERVER
@@ -113,9 +114,8 @@ def getFirefoxDriver():
 def getChromeDriver():
     chromeOptions = webdriver.ChromeOptions()
     desired_capabilities = chromeOptions.to_capabilities()
-    proxy = getProxyMap()
-    proxy['proxyType'] = proxy['proxyType']['string']
-    # desired_capabilities['proxy'] = proxy
+    proxyPlugin = create_proxyauth_extension(**settings.PROXY_SERVER)
+    chromeOptions.add_extension(proxyPlugin)
     preferences = {
         "download.default_directory": settings.MEDIA_ROOT,
         "directory_upgrade": True,

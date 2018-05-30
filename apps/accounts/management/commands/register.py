@@ -2,7 +2,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from bots.register import RegisterDriver as Driver
+from bots.selenium.register import RegisterDriver as Driver
 logger = logging.getLogger('api')
 
 

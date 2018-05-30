@@ -8,7 +8,7 @@ from django.core.management.base import BaseCommand
 
 from apps.contrib import const
 from apps.accounts import models
-from bots.client import Client
+from bots.telegram.client import Client
 from bots.utils import TcpClient
 
 

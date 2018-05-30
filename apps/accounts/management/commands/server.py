@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 
 from apps.accounts import models
 from apps.contrib import const
-from bots.client import Client
+from bots.telegram.client import Client
 from bots.utils import Event
 logger = logging.getLogger('api')
 

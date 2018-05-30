@@ -1,13 +1,8 @@
-import time
 import logging
-import multiprocessing
 
 from django.core.management.base import BaseCommand
-from faker import Faker
 
-from apps.accounts import models
-from bots.client import Client
-from bots.browser import Driver
+from bots.selenium.airdrop import Driver
 logger = logging.getLogger('api')
 
 

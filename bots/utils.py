@@ -15,6 +15,11 @@ def logError():
 
 
 class TcpClient(object):
+    """
+    tcp 客户端
+    with TcpClient() as client:
+        client.send(b'xxx')
+    """
     client = None
 
     def __enter__(self):
@@ -33,6 +38,10 @@ class Chat:
 
 
 class Event(object):
+    """
+    telegram 的事件类
+    用于telegram客户端收到消息时的获取参数
+    """
     def __init__(self, bytes):
         self.raw_text = bytes.decode('utf8')
         self.chat = Chat()
@@ -48,6 +57,9 @@ class Event(object):
 
 
 def retry(func):
+    """
+    重试装饰器，默认重试三次
+    """
     count = 0
 
     def inner(*args):
@@ -66,6 +78,9 @@ def retry(func):
 
 
 class Command(object):
+    """
+    Command类 用于tcp server 解析 tcp client send过来的值
+    """
     def __init__(self, text):
         try:
             data = json.loads(text)
