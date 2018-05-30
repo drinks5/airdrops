@@ -7,7 +7,7 @@ from selenium.common import exceptions
 
 from apps.contrib import const
 from bots.selenium.proxy import create_proxyauth_extension
-from .utils import logError
+from bots.utils import logError
 logger = logging.getLogger('api')
 proxyConfig = settings.PROXY_SERVER
 chromedriver = '/Users/mum5/Documents/repo/chromedriver'

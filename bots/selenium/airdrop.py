@@ -10,7 +10,7 @@ from selenium.common import exceptions
 
 from apps.accounts.models import Account, AirDrop, Operation
 from .base import BaseDriver
-from .utils import logError
+from bots.utils import logError
 
 import logging
 logger = logging.getLogger('api')

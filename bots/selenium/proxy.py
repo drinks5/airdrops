@@ -2,13 +2,13 @@ import string
 import zipfile
 
 
-def create_proxyauth_extension(port, port,
+def create_proxyauth_extension(host, port,
                                username, password,
                                scheme='http', plugin_path=None):
     """代理认证插件
 
     args:
-        port (str): 你的代理地址或者域名（str类型）
+        host (str): 你的代理地址或者域名（str类型）
         port (int): 代理端口号（int类型）
         username (str):用户名（字符串）
         password (str): 密码 （字符串）
@@ -20,7 +20,7 @@ def create_proxyauth_extension(port, port,
     """
 
     if plugin_path is None:
-        plugin_path = 'vimm_chrome_proxyauth_plugin.zip'
+        plugin_path = 'proxy.zip'
 
     manifest_json = """
     {
@@ -75,7 +75,7 @@ def create_proxyauth_extension(port, port,
     );
     """
     ).substitute(
-        host=port,
+        host=host,
         port=port,
         username=username,
         password=password,
