@@ -13,7 +13,7 @@ from faker import Faker
 from django.conf import settings
 
 from apps.contrib import const
-from .utils import logError, Command, sleep
+from bots.utils import logError, Command, sleep
 
 logger = logging.getLogger('api')
 

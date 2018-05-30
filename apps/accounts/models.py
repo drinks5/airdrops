@@ -24,9 +24,11 @@ class Account(models.Model):
         fields = [x.name for x in self._meta.fields]
         return '\n'.join(
             ['{}: {}'.format(key, getattr(self, key)) for key in fields])
+
     @property
     def LastName(self):
         return self.profile['LastName']
+
     @property
     def FirstName(self):
         return self.profile['FirstName']
@@ -59,6 +61,12 @@ class Operation(models.Model):
 
     class Meta:
         unique_together = (('account', 'airdrop'), )
+
+
+class Link(models.Model):
+    href = models.TextField("链接")
+    text = models.TextField("链接内容")
+    verified = models.BooleanField("是否被点击过", default=False, blank=True)
 
 
 class AccountSerializer(serializers.ModelSerializer):
