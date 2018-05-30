@@ -42,6 +42,7 @@ class Event(object):
     telegram 的事件类
     用于telegram客户端收到消息时的获取参数
     """
+
     def __init__(self, bytes):
         self.raw_text = bytes.decode('utf8')
         self.chat = Chat()
@@ -81,6 +82,7 @@ class Command(object):
     """
     Command类 用于tcp server 解析 tcp client send过来的值
     """
+
     def __init__(self, text):
         try:
             data = json.loads(text)
@@ -96,6 +98,13 @@ class Command(object):
 
     def __str__(self):
         return '<Command {}: {}, {}>'.format(self.name, self.target, self.para)
+
+    @classmethod
+    def from_dict(cls, **kwargs):
+        return cls(json.dumps(kwargs))
+
+    def to_bytes(self):
+        return self.raw_text.encode('utf8')
 
     __repr__ = __str__
 

@@ -1,54 +1,56 @@
+import time
+import logging
+
+from django.conf import settings
 import twitter
 
-proxies={'http':'http://127.0.0.1:1087',
-         'https':'https://127.0.0.1:1087'}
+logger = logging.getLogger('api')
+
+
+def get_proxys():
+    host = settings.PROXY_SERVER['host']
+    port = settings.PROXY_SERVER['port']
+    username = settings.PROXY_SERVER['username']
+    password = settings.PROXY_SERVER['password']
+    proxies = {
+        'http': f'http://{username}:{password}@{host}:{port}',
+        'https': f'http://{username}:{password}@{host}:{port}'
+    }
+    return proxies
+
 
 class Client(object):
-    def __init__(self,
-                 consumer_key,
-                 consumer_secret,
-                 access_token_key,
-                 access_token_secret,
-                 mobile='10086'):
-        self.consumer_key = consumer_key
-        self.consumer_secret = consumer_secret
-        self.access_token_key = access_token_key
-        self.access_token_secret = access_token_secret
-        self.mobile = mobile
-        self.verify()
-
-    def verify(self):
-        self.api = twitter.Api(consumer_key=self.consumer_key,
-                               consumer_secret=self.consumer_secret,
-                               access_token_key=self.access_token_key,
-                               access_token_secret=self.access_token_secret,
-                               proxies=proxies)
+    def __init__(self, account):
+        proxies = get_proxys()
+        self.api = twitter.Api(proxies=proxies, **account.apis.twitter)
         user = self.api.VerifyCredentials()
         self.id = user.id
         self.screen_name = user.screen_name
+
+    @classmethod
+    def create(cls, account, index=''):
+        return cls(account)
+
+    @classmethod
+    def bulkCreate(cls, accounts):
+        clients = []
+        for index, account in enumerate(accounts):
+            clients.append(cls.create(account, index))
+            time.sleep(0.2)
+        logger.debug('初始化完成推特客户端: {}个'.format(len(accounts)))
+        return clients
 
     def send_message(self, message):
         status = self.api.PostUpdate(message)
         return True if status.text == message else False
 
-    def like(self, id=None, screen_name=None, follow=True):
-        if id:
-            self.api.CreateFriendship(user_id=id, follow=follow)
-        if screen_name:
-            self.api.CreateFriendship(screen_name=screen_name, follow=follow)
+    def like(self, target, follow=True):
+        if target.isdigit():
+            return self.api.CreateFriendship(user_id=id, follow=follow)
+        return self.api.CreateFriendship(screen_name=target, follow=follow)
 
     def dislike(self, id=None, screen_name=None):
         self.like(self, id, screen_name, False)
 
     def get_friend_IDs(self):
         return self.api.GetFriendIDs()
-
-
-def get_clients():
-    clients = list()
-    clients.append(Client(access_token_key='985070023654834176-fQybS5THVgNdd0cQBESgXooQM2ACHBF',
-                           access_token_secret='5TeHOVpaiblc7kltVeJd7IqLJYexwLr9DGxMi96kdy6fi',
-                           consumer_key='aB0MaDinqWWI6oK66HSP3qNUc',
-                           consumer_secret = 'VJY70cfxb8ifpog8GeOWCfrODuzrpVNR9hMgFc3i18NAzIMwPW'))
-    return clients
-

@@ -1,21 +1,29 @@
 import sys
 from client import get_clients
 
+
 def test(*args):
     print(test)
     print(args)
 
+
 def like(*args):
+    """
+    ./twitter link xxxx
+    """
     if len(args) == 0:
         return
 
     def func(client):
         client.like(screen_name=args[0])
 
-    invoke(func,args)
+    invoke(func, args)
 
 
 def send(*args):
+    """
+    ./twitter send xxxx
+    """
     if len(args) == 0:
         return
     message = args[0]
@@ -42,6 +50,7 @@ def invoke(func, args):
                 if getattr(client, key) == value:
                     func(client)
 
+
 def main():
     argv = sys.argv
     if len(argv) < 2:
@@ -51,7 +60,5 @@ def main():
         globals()[action](*argv[2:])
 
 
-
 if __name__ == '__main__':
     main()
-

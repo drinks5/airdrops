@@ -5,7 +5,7 @@ Base settings to build other settings files upon.
 import environ
 
 ROOT_DIR = environ.Path(__file__) - 3  # (telegramcloud/config/settings/base.py - 3 = telegramcloud/)
-APPS_DIR = ROOT_DIR.path('telegramcloud')
+APPS_DIR = ROOT_DIR.path('apps')
 
 env = environ.Env()
 

@@ -9,7 +9,7 @@ from django.core.management.base import BaseCommand
 from apps.contrib import const
 from apps.accounts import models
 from bots.telegram.client import Client
-from bots.utils import TcpClient
+from bots.utils import TcpClient, Command as MyCommand
 
 
 class Command(BaseCommand):
@@ -42,7 +42,7 @@ class Command(BaseCommand):
             parseIter(name, target, para, options)
             return
         with TcpClient() as client:
-            command = getCommand(name=name, para=para, target=target)
+            command = MyCommand.from_dict(name=name, para=para, target=target).to_bytes()
             client.send(command)
 
 
