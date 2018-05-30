@@ -53,7 +53,7 @@ def main():
     if len(argv) < 2:
         pass
     else:
-        globals()[argv[1](*argv[2:])
+        globals()[argv[1]](*argv[2:])
 
 
 if __name__ == '__main__':
