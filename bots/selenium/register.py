@@ -4,7 +4,7 @@ import requests
 from django.conf import settings
 from faker import Faker
 
-from bots.base import BaseDriver
+from bots.selenium.base import BaseDriver
 from bots.utils import retry
 from apps.accounts import models
 from apps.contrib import const
@@ -62,7 +62,8 @@ def Account(driver, options):
         zone=options['zone'],
         **eth)
     if settings.MAIL_SERVER:
-        requests.get('http://{}/register/{}'.format(settings.MAIL_SERVER, account.email))
+        requests.get('http://{}/register/{}'.format(settings.MAIL_SERVER,
+                                                    account.email))
 
 
 @register
@@ -80,7 +81,8 @@ def Eth(driver, options):
     driver.driver.implicitly_wait(3)
     walletElem = driver.driver.find_element_by_link_text('Create New Wallet')
     retry(walletElem.click)()
-    downloadElem = ByXpath("//span[contains(text(), 'Keystore File (UTC / JSON)')]")
+    downloadElem = ByXpath(
+        "//span[contains(text(), 'Keystore File (UTC / JSON)')]")
     retry(downloadElem.click)()
     driver.driver.implicitly_wait(3)
     with open(getLatestFile(), 'r') as fd:
@@ -128,33 +130,87 @@ def Telegram(driver, options):
 
 @register
 def Twitter(driver, options):
-    account = models.Account.objects.get(mobile=mobile)
+    account = models.Account.objects.get(mobile=options['mobile'])
     ByXpath = driver.driver.find_element_by_xpath
     # 改用邮箱
-    ByXpath(
-        '//*[@id="react-root"]/div[2]/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div/div/div[4]'
-    ).click()
+    driver.driver.implicitly_wait(3)
+    retry(
+        ByXpath(
+            '//*[@id="react-root"]/div[2]/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div/div/div[4]'
+        ).click)()
     # 填写名字
     ByXpath("//input[contains(@placeholder, '{}')]".format('名字')).send_keys(
         account.name)
     ByXpath("//input[contains(@placeholder, '{}')]".format('电子邮件')).send_keys(
         account.email)
     # 下一个
+    driver.driver.implicitly_wait(3)
     ByXpath(
         '//*[@id="react-root"]/div[2]/div/div/div/div[2]/div[2]/div/div/div[2]/div[1]/div/div/div/div[3]/div/div'
     ).click()
+    driver.driver.implicitly_wait(1)
     # 注册
     ByXpath(
         '//*[@id="react-root"]/div[2]/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div/div/div/div[5]/div'
     ).click()
     # 密码
+    driver.driver.implicitly_wait(1)
     ByXpath(
-        '//*[@id="react-root"]/div/main/div/div/div/div[2]/div[2]/div/div[3]/div/div[2]/div/input'
+        '//*[@id="react-root"]/div[2]/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div/div/div[3]/div/div[2]/div/input'
     ).send_keys(settings.TT_PD)
+    driver.driver.implicitly_wait(1)
+    ByXpath(
+        '//*[@id="react-root"]/div[2]/div/div/div/div[2]/div[2]/div/div/div[2]/div[1]/div/div/div/div[3]/div/div'
+    ).click()
 
     # 谷歌验证码
     driver.locate(xpath="//input[@type='submit']").click()
     return driver
+
+
+def _createTwitterApi(driver, account, ByXpath):
+    # application 名称
+    driver.driver.get('https://apps.twitter.com/app/new')
+    driver.driver.implicitly_wait(5)
+    ByXpath('//*[@id="edit-name"]').send_keys('airdrop{}'.format(account.name))
+    # application 描述
+    ByXpath('//*[@id="edit-description"]').send_keys('airdrop for {}'.format(
+        account.name))
+    # application 域名
+    ByXpath('//*[@id="edit-url"]').send_keys('https://twitter.{}'.format(
+        settings.DOMAIN))
+    # application 同意勾选
+    ByXpath('//*[@id="edit-tos-agreement"]').click()
+    # application 点击注册
+    ByXpath('//*[@id="edit-submit"]').click()
+    driver.driver.implicitly_wait(5)
+    # application 点击tab 3
+    ByXpath('//*[@id="gaz-content-body"]/div[2]/ul/li[3]/a').click()
+    # application 创建token
+    ByXpath('//*[@id="edit-submit-owner-token"]').click()
+
+    # application 获取token
+    consumer_key = ByXpath(
+        '//*[@id="gaz-content-body"]/div[3]/div/div[2]/div[1]/span[2]').text
+    consumer_secret = ByXpath(
+        '//*[@id="gaz-content-body"]/div[3]/div/div[2]/div[2]/span[2]').text
+    access_token_key = ByXpath(
+        '//*[@id="gaz-content-body"]/div[3]/div/div[4]/div[1]/span[2]').text
+    access_token_secret = ByXpath(
+        '//*[@id="gaz-content-body"]/div[3]/div/div[4]/div[2]/span[2]').text
+    twitter = dict(
+        consumer_key=consumer_key,
+        consumer_secret=consumer_secret,
+        access_token_key=access_token_key,
+        access_token_secret=access_token_secret)
+    apis = models.Apis.objects.filter(account=account)
+    if not apis:
+        models.Apis.objects.create(
+            account=account, twitter=twitter, telegram={})
+    else:
+        apis = apis[0]
+        apis.twitter = twitter
+        apis.save()
 
 
 class RegisterDriver(BaseDriver):

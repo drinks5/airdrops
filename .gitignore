@@ -8,6 +8,7 @@ __pycache__/
 json
 proxy.zip
 *.out
+apps/media
 
 # C extensions
 *.so

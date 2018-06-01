@@ -8,8 +8,8 @@ from django.contrib.postgres.fields import JSONField
 class Account(models.Model):
     zone = models.CharField(default='+86', max_length=10)
     mobile = models.CharField(max_length=50)
-    twitter = models.CharField(max_length=15)
-    facebook = models.CharField(max_length=15)
+    twitter = models.CharField(max_length=15, default='')
+    facebook = models.CharField(max_length=15, default='')
     email = models.CharField(max_length=50)
     name = models.CharField(max_length=50)
     eth = models.CharField(max_length=500)
@@ -36,8 +36,8 @@ class Account(models.Model):
 
 
 class Apis(models.Model):
-    telegram = JSONField()
-    twitter = JSONField()
+    telegram = JSONField(default={})
+    twitter = JSONField(default={})
     account = models.OneToOneField(Account, on_delete=models.CASCADE)
 
     class Meta:

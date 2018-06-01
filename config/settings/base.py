@@ -18,6 +18,7 @@ TT_PD = env("TtPd", default=MY_PD)
 MY_CHANNEL = env("MyChannel")
 CHROME_DRIVER = env("CHROME_DRIVER", default='/usr/local/bin/chromedriver')
 MAIL_SERVER = env("MAIL_SERVER", default='')  # 自建的邮件服务器
+DOMAIN = env("DOMAIN")
 # GENERAL
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#debug
