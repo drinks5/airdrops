@@ -2,8 +2,8 @@ import string
 import zipfile
 
 
-def create_proxyauth_extension(host, port,
-                               username, password,
+def create_proxyauth_extension(host='', port='',
+                               username='', password='',
                                scheme='http', plugin_path=None):
     """代理认证插件
 
@@ -18,6 +18,8 @@ def create_proxyauth_extension(host, port,
 
     return str -> plugin_path
     """
+    if not host:
+        return
 
     if plugin_path is None:
         plugin_path = 'proxy.zip'
@@ -85,4 +87,6 @@ def create_proxyauth_extension(host, port,
         zp.writestr("manifest.json", manifest_json)
         zp.writestr("background.js", background_js)
 
+
+    print(f'加载插件: {plugin_path}')
     return plugin_path

@@ -1,5 +1,6 @@
 import time
 import logging
+import os
 
 from django.conf import settings
 from selenium import webdriver
@@ -12,6 +13,7 @@ logger = logging.getLogger('api')
 proxyConfig = settings.PROXY_SERVER
 chromedriver = settings.CHROME_DRIVER
 geckodriver = '/usr/local/bin/geckodriver'
+ProxyPlugin = create_proxyauth_extension(**settings.PROXY_SERVER)
 
 
 class Element(object):
@@ -114,8 +116,7 @@ def getFirefoxDriver():
 def getChromeDriver():
     chromeOptions = webdriver.ChromeOptions()
     desired_capabilities = chromeOptions.to_capabilities()
-    proxyPlugin = create_proxyauth_extension(**settings.PROXY_SERVER)
-    chromeOptions.add_extension(proxyPlugin)
+    ProxyPlugin and chromeOptions.add_extension(ProxyPlugin)
     preferences = {
         "download.default_directory": settings.MEDIA_ROOT,
         "directory_upgrade": True,

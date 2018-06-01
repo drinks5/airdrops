@@ -8,7 +8,7 @@ Telegram = 'Telegram'
 TelegramPhone = '42777'
 Tcp = ('0.0.0.0', 9999)
 MaxBuffer = 1024 * 512
-
+MaxWindow = 6
 
 class Cache:
     account = 'account'

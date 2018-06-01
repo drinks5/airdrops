@@ -1,8 +1,10 @@
 # encoding: utf-8
 
+import json
 import logging
 import time
 import datetime
+import urllib
 
 import telethon
 from telethon import TelegramClient, events
@@ -38,24 +40,26 @@ class Dispatch(object):
         self.client.account.save()
 
     def joinChannel(self, command):
-        time.sleep(10)
         logger.debug('start command joinChannel {}'.format(command))
+        url = urllib.parse.urlparse(command.target)
+        request = JoinChannelRequest
+        if not url.netloc:
+            request = ImportChatInviteRequest
         try:
-            group = self.client.instance.get_entity(command.target)
-            self.client.instance(JoinChannelRequest(group))
+            self.client.instance(request(command.target))
             self.client.account.save()
             logger.debug('finish command joinChannel')
         except Exception:
             logError()
+        time.sleep(10)
 
     def sendMessage(self, command):
         time.sleep(1)
         account = self.client.account
-        self.client.instance.send_message(command.target,
-                                          command.msg.format(
-                                              eth=account.eth,
-                                              email=account.email,
-                                              name=account.name))
+        self.client.instance.send_message(
+            command.target,
+            command.msg.format(
+                eth=account.eth, email=account.email, name=account.name))
 
     def updateUsername(self, command):
         if self.client.account.profile.get('updatedUsername'):
@@ -116,6 +120,18 @@ class Client(object):
             update_workers=4,
             spawn_read_thread=True)
         self.dispatch = Dispatch(self)
+
+    def getMessages(self, target: str):
+        return self.dispatch.excute(
+            Command.from_dict(name='getMessages', target=target))
+
+    def joinChannel(self, target: str):
+        return self.dispatch.excute(
+            Command.from_dict(name='joinChannel', target=target))
+
+    def sendMessage(self, target: str, msg: str):
+        return self.dispatch.excute(
+            Command.from_dict(name='sendMessage', target=target, para=[msg]))
 
     def OnMessage(self, event):
         command = Command(event.raw_text)
