@@ -1,8 +1,9 @@
 import logging
 
 from django.core.management.base import BaseCommand
-from bots.telegram.client import Client
-from bots.utils import Command as MyCommand, TcpClient
+
+from apps.accounts import models
+from bots.twitter.client import Client
 
 logger = logging.getLogger('api')
 
@@ -22,13 +23,10 @@ class Command(BaseCommand):
         parser.add_argument('--mobile', help='指定手机号')
 
     def handle(self, *args, **options):
-        name = options['name']
-        para = list(args)
-        target = ''
-        if para:
-            target = para.pop(0)
-        with TcpClient() as client:
-            command = MyCommand.from_dict(
-                name=name, para=para, target=target,
-                mobile=options['mobile']).to_bytes()
-            client.send(command)
+        accounts = models.Account.objects.filter()
+        if options['mobile']:
+            accounts = accounts.filter(mobile=options['mobile'])
+        clients = Client.bulkCreate(accounts)
+        for client in clients:
+            method = getattr(client, options['name'])
+            method(*args)

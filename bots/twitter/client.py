@@ -22,7 +22,7 @@ def get_proxys():
 class Client(object):
     def __init__(self, account):
         proxies = get_proxys()
-        self.api = twitter.Api(proxies=proxies, **account.apis.twitter)
+        self.api = twitter.Api(proxies=proxies, **account.twitter.api)
         user = self.api.VerifyCredentials()
         self.id = user.id
         self.screen_name = user.screen_name
@@ -35,7 +35,8 @@ class Client(object):
     def bulkCreate(cls, accounts):
         clients = []
         for index, account in enumerate(accounts):
-            clients.append(cls.create(account, index))
+            if account.twitter.api:
+                clients.append(cls.create(account, index))
             time.sleep(0.2)
         logger.debug('初始化完成推特客户端: {}个'.format(len(accounts)))
         return clients
